@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>良率排查 Agent</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* 布局：左栏 = 提问 + 批次晶圆图；右栏 = Agent 实时步骤 + 报告。整体像产线监控台 */
+:root{
+  --bg:#0e1419; --panel:#151d24; --panel2:#1b252e; --fg:#e3e9ee; --muted:#8597a6; --line:#2a3743;
+  --accent:#4cc7b4; --llm:#b493ef; --warn:#e8a54a; --bad:#ef6b5b; --ok:#5cc58a; --die:#2b6b5f;
+  --sans:"Noto Sans SC","PingFang SC",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 var(--sans)}
+header{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:17px;margin:0;font-weight:700}
+.tag{font:12px var(--mono);color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:4px}
+.tag b{color:var(--ok);font-weight:600}
+.wrap{display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:16px;padding:16px 20px;max-width:1500px;margin:0 auto}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.card h2{font-size:12px;letter-spacing:.08em;color:var(--muted);margin:0 0 12px;font-weight:500}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+textarea{width:100%;min-height:72px;resize:vertical;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px;font:14px var(--sans)}
+textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+button{font:600 14px var(--sans);border-radius:6px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--fg)}
+button.primary{background:var(--accent);color:#06221d;border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+.preset{font-size:12px;padding:5px 10px;font-weight:400;color:var(--muted)}
+#grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.wf{position:relative;text-align:center;font:11px var(--mono);color:var(--muted);transition:transform .3s}
+.wf canvas{width:100%;aspect-ratio:1;display:block;border-radius:50%;transition:box-shadow .3s}
+.wf.hl canvas{box-shadow:0 0 0 2px var(--bad),0 0 14px var(--bad)}
+.wf.side canvas{box-shadow:0 0 0 2px var(--warn)}
+.wf.hl{color:var(--bad)} .wf.side{color:var(--warn)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.stat{display:flex;justify-content:space-between;font:12px var(--mono);color:var(--muted);margin-bottom:10px}
+.stat b{color:var(--fg);font-size:15px}
+#steps{display:flex;flex-direction:column;gap:10px}
+.empty{color:var(--muted);font-size:13px;padding:24px 0;text-align:center}
+.step{border:1px solid var(--line);border-radius:6px;background:var(--panel2);overflow:hidden;animation:in .3s ease}
+@keyframes in{from{opacity:.3;transform:translateY(4px)}}
+@media (prefers-reduced-motion:reduce){.step{animation:none}}
+.step-h{display:flex;gap:10px;align-items:center;padding:9px 12px;flex-wrap:wrap}
+.n{font:600 12px var(--mono);color:var(--bg);background:var(--accent);border-radius:4px;padding:1px 7px}
+.sys{font-size:12px;color:var(--muted)}
+.call{font:13px var(--mono);color:var(--accent);word-break:break-all}
+.spin{margin-left:auto;font-size:12px;color:var(--llm)}
+.spin::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--llm);margin-right:6px;animation:p 1s infinite}
+@keyframes p{50%{opacity:.2}}
+.sum{padding:0 12px 10px;font-size:13px}
+details{border-top:1px solid var(--line)}
+summary{cursor:pointer;padding:6px 12px;font-size:12px;color:var(--muted)}
+pre{margin:0;padding:10px 12px;font:12px/1.5 var(--mono);color:var(--muted);max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.think{display:flex;align-items:center;gap:8px;color:var(--llm);font-size:13px;padding:6px 2px}
+#report{display:grid;gap:12px}
+.sec h3{font-size:13px;margin:0 0 4px;color:var(--accent)}
+.sec.conc{border-left:3px solid var(--bad);padding-left:12px}
+.sec.conc p{font-size:16px;font-weight:500;margin:0}
+.sec div{white-space:pre-wrap;font-size:14px}
+.conf{display:inline-block;font:600 12px var(--mono);padding:2px 8px;border-radius:4px;background:var(--ok);color:#062312;margin-right:6px}
+.err{color:var(--bad)}
+.timer{font:12px var(--mono);color:var(--muted);margin-left:auto}
+</style>
+</head>
+<body>
+<header>
+  <h1>良率异常排查 Agent</h1>
+  <span class="tag">LLM <b>qwen2.5:7b</b> · 本地 Ollama</span>
+  <span class="tag">MCP <b id="toolcount">fab-tools</b></span>
+  <span class="tag">数据不出本机</span>
+  <span class="timer" id="timer"></span>
+</header>
+
+<div class="wrap">
+  <div class="col">
+    <section class="card">
+      <h2>提问</h2>
+      <textarea id="q" aria-label="问题">LOT-A1024 的良率从 92% 掉到 86%，帮我查一下原因。</textarea>
+      <div class="row">
+        <button class="primary" id="go">开始排查</button>
+        <button class="preset" data-q="LOT-A1024 良率异常，帮我查一下原因。">简短问法</button>
+        <button class="preset" data-q="A1024 这批货边缘失效很多，是哪台机台的问题？">指定现象</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>批次 LOT-A1024 · 25 片晶圆</h2>
+      <div class="stat"><span>平均良率 <b id="avg">—</b></span><span>低于 85% <b id="lowc">—</b></span></div>
+      <div id="grid"></div>
+      <div class="legend">
+        <span><i style="background:var(--die)"></i>好的芯片</span>
+        <span><i style="background:var(--bad)"></i>坏的芯片</span>
+        <span><i style="background:transparent;box-shadow:0 0 0 2px var(--bad)"></i>Agent 圈定的坏片</span>
+        <span><i style="background:transparent;box-shadow:0 0 0 2px var(--warn)"></i>另一个无关问题</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>Agent 执行过程</h2>
+      <div id="steps"><div class="empty">点「开始排查」，Agent 会自己决定调用哪些工具，每一步实时显示在这里。</div></div>
+    </section>
+    <section class="card" id="reportCard" hidden>
+      <h2>排查报告</h2>
+      <div id="report"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const TOOL_CN = {get_lot_yield:"① 看哪些片坏了", commonality_analysis:"② 找坏片共同经过的机器",
+  get_equipment_alarms:"③ 查这台机器最近出过什么事", search_8d_reports:"④ 翻以前类似的事故记录"};
+let wafers = [];
+
+/* 晶圆图：按失效图案画 die。Edge-Ring 坏在外圈，Scratch 是一条斜线，其余随机少量坏点 */
+function drawWafer(cv, w) {
+  const S = 120, ctx = cv.getContext("2d"); cv.width = cv.height = S;
+  const css = getComputedStyle(document.documentElement);
+  const good = css.getPropertyValue("--die"), bad = css.getPropertyValue("--bad"), rim = css.getPropertyValue("--line");
+  ctx.fillStyle = css.getPropertyValue("--panel2"); ctx.beginPath(); ctx.arc(60,60,58,0,7); ctx.fill();
+  let seed = parseInt(w.wafer.slice(1)) * 9301;
+  const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const n = 15, d = 104 / n;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    const x = 8 + i*d + d/2, y = 8 + j*d + d/2, r = Math.hypot(x-60, y-60);
+    if (r > 52) continue;
+    let fail = rnd() < (100 - w.yield) / 400;
+    if (w.pattern === "Edge-Ring" && r > 40) fail = rnd() < 0.85;
+    if (w.pattern === "Scratch" && Math.abs((x-60) - (y-60)*0.6) < 5 && r < 46) fail = true;
+    ctx.fillStyle = fail ? bad : good; ctx.fillRect(x-d/2+0.6, y-d/2+0.6, d-1.2, d-1.2);
+  }
+  ctx.strokeStyle = rim; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(60,60,57,0,7); ctx.stroke();
+}
+
+async function loadWafers() {
+  try {
+    wafers = await (await fetch("/api/wafers")).json();
+    $("#grid").innerHTML = "";
+    for (const w of wafers) {
+      const el = document.createElement("div"); el.className = "wf"; el.id = "w-" + w.wafer;
+      el.title = `${w.wafer} 良率 ${w.yield}% · ${w.pattern}`;
+      const cv = document.createElement("canvas"); el.append(cv, `${w.wafer} ${w.yield}%`);
+      $("#grid").append(el); drawWafer(cv, w);
+    }
+    $("#avg").textContent = (wafers.reduce((a,w)=>a+w.yield,0)/wafers.length).toFixed(1) + "%";
+    $("#lowc").textContent = wafers.filter(w=>w.yield<85).length + " 片";
+  } catch { $("#grid").innerHTML = '<div class="err">读取晶圆数据失败：先运行 scripts/gen_data.py</div>'; }
+}
+
+/* 把工具返回的 JSON 提炼成一句人话，原始 JSON 放在折叠区 */
+function summarize(name, raw) {
+  let r; try { r = JSON.parse(raw); } catch { return raw.slice(0, 120); }
+  if (r.error) return `<span class="err">${r.error}</span>`;
+  if (name === "get_lot_yield")
+    return `平均良率 <b>${r.avg_yield_pct}%</b>；` + Object.entries(r.low_yield_by_pattern)
+      .map(([k,v]) => `${k} ${v.share_of_low}`).join("，");
+  if (name === "commonality_analysis") {
+    const t = r.top_suspects[0];
+    return `嫌疑第一：<b style="color:var(--bad)">${t.tool}</b>（${t.step}）坏片 ${t.bad_wafers_through}，好片 ${t.good_wafers_through}，得分 ${t.score}`;
+  }
+  if (name === "get_equipment_alarms")
+    return `${r.count} 条记录：` + r.events.map(e => `${e.time.slice(5)} <b>${e.code}</b>`).join("；");
+  if (name === "search_8d_reports")
+    return r.matches.length ? `最相似：<b>${r.matches[0].id}</b> ${r.matches[0].title}` : "无相似案例";
+  return "";
+}
+
+function highlight(name, args, raw) {
+  if (name === "commonality_analysis") {
+    for (const w of args.bad_wafers || []) $("#w-" + w)?.classList.add("hl");
+  }
+  if (name === "get_lot_yield") {
+    try {
+      const groups = Object.values(JSON.parse(raw).low_yield_by_pattern || {});
+      groups.slice(1).forEach(g => g.wafers.forEach(w => $("#w-" + w)?.classList.add("side")));
+    } catch {}
+  }
+}
+
+function renderReport(text) {
+  const parts = text.split(/【([^】]+)】/).slice(1);
+  if (!parts.length) { $("#report").innerHTML = `<div class="sec"><div></div></div>`; $("#report .sec div").textContent = text; return; }
+  $("#report").innerHTML = "";
+  for (let i = 0; i < parts.length; i += 2) {
+    const title = parts[i], body = (parts[i+1] || "").trim();
+    const sec = document.createElement("div"); sec.className = "sec" + (title === "结论" ? " conc" : "");
+    const h = document.createElement("h3"); h.textContent = title;
+    const b = document.createElement(title === "结论" ? "p" : "div");
+    if (title === "置信度") {
+      const m = body.match(/^[高中低]/);
+      if (m) { const c = document.createElement("span"); c.className = "conf"; c.textContent = m[0];
+        b.append(c, body.replace(/^[高中低][。，,.\s]*/, "")); }
+      else b.textContent = body;
+    } else b.textContent = body;
+    sec.append(h, b); $("#report").append(sec);
+  }
+}
+
+let es, t0, tick;
+function think(on) {
+  $("#thinking")?.remove();
+  if (on) $("#steps").insertAdjacentHTML("beforeend", '<div class="think" id="thinking"><span class="spin"></span>模型思考下一步…</div>');
+}
+function finish() {
+  es?.close(); clearInterval(tick); think(false);
+  $("#go").disabled = false; $("#go").textContent = "重新排查";
+}
+
+function start() {
+  $("#go").disabled = true; $("#go").textContent = "排查中…";
+  $("#steps").innerHTML = ""; $("#reportCard").hidden = true;
+  document.querySelectorAll(".wf").forEach(e => e.classList.remove("hl","side"));
+  t0 = Date.now(); tick = setInterval(() => $("#timer").textContent = ((Date.now()-t0)/1000).toFixed(1) + " s", 100);
+  think(true);
+  es = new EventSource("/api/run?q=" + encodeURIComponent($("#q").value));
+  es.onmessage = ev => {
+    const e = JSON.parse(ev.data);
+    if (e.type === "tools") { $("#toolcount").textContent = e.tools.length + " 个工具"; return; }
+    if (e.type === "call") {
+      think(false);
+      $("#steps").insertAdjacentHTML("beforeend", `<div class="step" id="s-${e.step}-${e.name}">
+        <div class="step-h"><span class="n">${e.step}</span><span class="call"></span>
+        <span class="sys">→ ${TOOL_CN[e.name] || "工具"}</span><span class="spin">执行中</span></div></div>`);
+      const el = $(`#s-${e.step}-${e.name}`);
+      el.querySelector(".call").textContent = `${e.name}(${JSON.stringify(e.args)})`;
+      el.dataset.args = JSON.stringify(e.args);
+    }
+    if (e.type === "result") {
+      const el = $(`#s-${e.step}-${e.name}`);
+      el.querySelector(".spin").remove();
+      el.insertAdjacentHTML("beforeend", `<div class="sum">${summarize(e.name, e.result)}</div><details><summary>原始返回</summary><pre></pre></details>`);
+      el.querySelector("pre").textContent = e.result;
+      highlight(e.name, JSON.parse(el.dataset.args), e.result);
+      think(true);
+    }
+    if (e.type === "final") {
+      think(false);
+      $("#steps").insertAdjacentHTML("beforeend", `<div class="step"><div class="step-h"><span class="n" style="background:var(--ok)">${e.step}</span><span>不再调用工具，生成报告</span></div></div>`);
+      renderReport(e.content); $("#reportCard").hidden = false;
+      $("#reportCard").scrollIntoView({behavior: "smooth", block: "nearest"});
+    }
+    if (e.type === "error") $("#steps").insertAdjacentHTML("beforeend", `<div class="err">出错：${e.message}（检查 Ollama 是否已启动）</div>`);
+    if (e.type === "done") finish();
+  };
+  es.onerror = () => { $("#steps").insertAdjacentHTML("beforeend", '<div class="err">与后端的连接断开。</div>'); finish(); };
+}
+
+$("#go").onclick = start;
+document.querySelectorAll(".preset").forEach(b => b.onclick = () => $("#q").value = b.dataset.q);
+loadWafers();
+</script>
+</body>
+</html>
