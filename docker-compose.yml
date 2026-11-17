@@ -1,0 +1,13 @@
+# docker compose up --build   然后打开 http://127.0.0.1:8000
+# 前提：宿主机已运行 ollama serve，并 pull 了 qwen2.5:7b、bge-m3
+services:
+  yield-agent:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      OLLAMA_HOST: http://host.docker.internal:11434
+      YIELD_AGENT_MODEL: ${YIELD_AGENT_MODEL:-qwen2.5:7b}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes:
+      - ./traces:/app/traces      # 排查轨迹落到宿主机，便于审计
+    restart: unless-stopped

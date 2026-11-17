@@ -1,0 +1,162 @@
+[
+  {
+    "case": 1,
+    "kind": "clear",
+    "lot": "LOT-H2624",
+    "root_tool": "CVD-05/A",
+    "pattern": "Center",
+    "second_tool": null
+  },
+  {
+    "case": 2,
+    "kind": "clear",
+    "lot": "LOT-B4244",
+    "root_tool": "ETCH-01/B",
+    "pattern": "Edge-Ring",
+    "second_tool": null
+  },
+  {
+    "case": 3,
+    "kind": "clear",
+    "lot": "LOT-K7901",
+    "root_tool": "ETCH-03/B",
+    "pattern": "Edge-Ring",
+    "second_tool": null
+  },
+  {
+    "case": 4,
+    "kind": "clear",
+    "lot": "LOT-J6898",
+    "root_tool": "ETCH-03/B",
+    "pattern": "Edge-Ring",
+    "second_tool": null
+  },
+  {
+    "case": 5,
+    "kind": "clear",
+    "lot": "LOT-H2742",
+    "root_tool": "IMP-01",
+    "pattern": "Center",
+    "second_tool": null
+  },
+  {
+    "case": 6,
+    "kind": "clear",
+    "lot": "LOT-J7539",
+    "root_tool": "CMP-02",
+    "pattern": "Scratch",
+    "second_tool": null
+  },
+  {
+    "case": 7,
+    "kind": "clear",
+    "lot": "LOT-G1914",
+    "root_tool": "ETCH-03/B",
+    "pattern": "Edge-Ring",
+    "second_tool": null
+  },
+  {
+    "case": 8,
+    "kind": "clear",
+    "lot": "LOT-B3851",
+    "root_tool": "CVD-02/A",
+    "pattern": "Center",
+    "second_tool": null
+  },
+  {
+    "case": 9,
+    "kind": "no_alarm",
+    "lot": "LOT-K8292",
+    "root_tool": "CVD-02/B",
+    "pattern": "Center",
+    "second_tool": null
+  },
+  {
+    "case": 10,
+    "kind": "no_alarm",
+    "lot": "LOT-D1195",
+    "root_tool": "CMP-01",
+    "pattern": "Scratch",
+    "second_tool": null
+  },
+  {
+    "case": 11,
+    "kind": "no_alarm",
+    "lot": "LOT-E9754",
+    "root_tool": "ETCH-01/B",
+    "pattern": "Edge-Ring",
+    "second_tool": null
+  },
+  {
+    "case": 12,
+    "kind": "scattered",
+    "lot": "LOT-G5155",
+    "root_tool": "ETCH-01/A",
+    "pattern": "Edge-Ring",
+    "second_tool": null
+  },
+  {
+    "case": 13,
+    "kind": "scattered",
+    "lot": "LOT-G3596",
+    "root_tool": "ETCH-03/A",
+    "pattern": "Edge-Ring",
+    "second_tool": null
+  },
+  {
+    "case": 14,
+    "kind": "scattered",
+    "lot": "LOT-J5179",
+    "root_tool": "IMP-01",
+    "pattern": "Center",
+    "second_tool": null
+  },
+  {
+    "case": 15,
+    "kind": "two_issues",
+    "lot": "LOT-K1093",
+    "root_tool": "ETCH-03/B",
+    "pattern": "Edge-Ring",
+    "second_tool": "IMP-01"
+  },
+  {
+    "case": 16,
+    "kind": "two_issues",
+    "lot": "LOT-C5930",
+    "root_tool": "CMP-01",
+    "pattern": "Scratch",
+    "second_tool": "LITHO-01"
+  },
+  {
+    "case": 17,
+    "kind": "two_issues",
+    "lot": "LOT-G7397",
+    "root_tool": "CMP-02",
+    "pattern": "Scratch",
+    "second_tool": "LITHO-01"
+  },
+  {
+    "case": 18,
+    "kind": "unknown",
+    "lot": "LOT-J7995",
+    "root_tool": null,
+    "pattern": "Random",
+    "second_tool": null
+  },
+  {
+    "case": 19,
+    "kind": "unknown",
+    "lot": "LOT-H7465",
+    "root_tool": null,
+    "pattern": "Random",
+    "second_tool": null
+  },
+  {
+    "case": 20,
+    "kind": "unknown",
+    "lot": "LOT-B6440",
+    "root_tool": null,
+    "pattern": "Random",
+    "second_tool": null
+  }
+]

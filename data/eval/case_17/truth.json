@@ -1,0 +1,8 @@
+{
+  "case": 17,
+  "kind": "two_issues",
+  "lot": "LOT-G7397",
+  "root_tool": "CMP-02",
+  "pattern": "Scratch",
+  "second_tool": "LITHO-01"
+}

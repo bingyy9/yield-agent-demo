@@ -1,6 +1,0 @@
-tool,time,level,code,msg
-ETCH-03/B,2026-11-13 22:10,INFO,PM-DONE,"Preventive maintenance completed: edge ring replaced, chamber wet clean"
-ETCH-03/B,2026-11-14 09:32,WARN,RF-PWR-DEV,"RF reflected power deviation 8.5% (limit 5%), auto-recovered"
-ETCH-03/B,2026-11-14 10:47,WARN,RF-PWR-DEV,"RF reflected power deviation 9.1% (limit 5%), auto-recovered"
-CVD-02/A,2026-11-14 11:05,INFO,GAS-FLOW,"MFC flow settle time slightly long, within spec"
-CMP-02,2026-11-14 12:20,INFO,PAD-LIFE,"Pad life 82%, schedule replacement"

@@ -1,0 +1,6 @@
+.venv
+traces
+__pycache__
+*.log
+.playwright-mcp
+eval/results
